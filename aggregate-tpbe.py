@@ -1,17 +1,18 @@
- # Author: Panos Bonotis
- # Date: Jul-2024
- # Description: This project is a Python-based tool designed 
- # to automate the aggregation and processing of multiple Excel files. 
- # It provides a user-friendly interface for selecting input and output directories, 
- # reads and concatenates data from multiple Excel sheets, standardizes column names, 
- # and removes duplicates based on specified criteria. 
- # The processed data is then saved into a new Excel file.
+# Author: Panos Bonotis
+# Date: Jul-2024
+# Description: This project is a Python-based tool designed 
+# to automate the aggregation and processing of multiple Excel files. 
+# It provides a user-friendly interface for selecting input and output directories, 
+# reads and concatenates data from multiple Excel sheets, standardizes column names, 
+# and removes duplicates based on specified criteria. 
+# The processed data is then saved into a new Excel file.
 
 import pandas as pd
 import glob
 import tkinter as tk
 from tkinter import filedialog
 import os
+import random
 
 # Function to read all Excel files and concatenate them into a dictionary of DataFrames by sheet name
 def read_excel_files(file_pattern):
@@ -25,7 +26,8 @@ def read_excel_files(file_pattern):
             if sheet_name not in all_data:
                 all_data[sheet_name] = df
             else:
-                all_data[sheet_name] = pd.concat([all_data[sheet_name], df], ignore_index=True)
+                if not df.empty:
+                    all_data[sheet_name] = pd.concat([all_data[sheet_name], df], ignore_index=True)
     return all_data
 
 # Function to standardize column names for SR ID and AGE
@@ -39,19 +41,36 @@ def standardize_column_names(df):
     df.rename(columns=rename_dict, inplace=True)
     return df
 
-# Function to process the DataFrame and remove duplicates based on SR ID, keeping the entry with the highest AGE
+# Function to resolve duplicates based on the available columns
+def resolve_duplicates(df):
+    if 'AGE' in df.columns:
+        # Sort by SR ID and AGE to ensure the entry with the highest AGE comes first
+        df = df.sort_values(by=['SR ID', 'AGE'], ascending=[True, False])
+        # Drop duplicates based on SR ID, keeping the first occurrence (which has the highest AGE due to sorting)
+        df = df.drop_duplicates(subset='SR ID', keep='first')
+    elif 'status' in df.columns:
+        df_grouped = df.groupby('SR ID')
+        resolved_df_list = []
+        for name, group in df_grouped:
+            if group['status'].str.lower().isin(['done']).any():
+                # Select randomly among the 'done' entries
+                resolved_df_list.append(group[group['status'].str.lower() == 'done'].sample(1))
+            else:
+                # Select randomly among all entries
+                resolved_df_list.append(group.sample(1))
+        df = pd.concat(resolved_df_list).reset_index(drop=True)
+    else:
+        # Randomly select one of the duplicates
+        df = df.groupby('SR ID').apply(lambda x: x.sample(1)).reset_index(drop=True)
+    return df
+
+# Function to process the DataFrame and handle duplicates
 def process_data(data_dict):
     processed_data = {}
     for sheet_name, data in data_dict.items():
-        if 'SR ID' in data.columns and 'AGE' in data.columns:
-            # Sort by SR ID and AGE to ensure the entry with the highest AGE comes first
-            data_sorted = data.sort_values(by=['SR ID', 'AGE'], ascending=[True, False])
-            # Drop duplicates based on SR ID, keeping the first occurrence (which has the highest AGE due to sorting)
-            unique_data = data_sorted.drop_duplicates(subset='SR ID', keep='first')
-            processed_data[sheet_name] = unique_data
-        else:
-            # If the expected columns are not present, keep the sheet as it is
-            processed_data[sheet_name] = data
+        if 'SR ID' in data.columns:
+            data = resolve_duplicates(data)
+        processed_data[sheet_name] = data
     return processed_data
 
 # Function to save the processed DataFrame to a new Excel file
