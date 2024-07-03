@@ -54,12 +54,13 @@ This project is a Python-based tool designed to automate the aggregation and pro
 ## Usage Instructions
 
 ### Setup
-- Ensure Python and necessary libraries (`pandas`, `openpyxl`, `tkinter`) are installed.
-- Install `pyinstaller` for creating an executable.
+- (OPTIONAL) Install `pyinstaller` for creating an executable.
 
 ### Running the Script
 - Run the script directly using Python to test and verify functionality.
-- Use `pyinstaller` to create an executable file:
+  ```sh
+  python aggregate-tpbe.py
+- (OPTIONAL) Use `pyinstaller` to create an executable file:
   ```sh
   pyinstaller --onefile aggregate-tpbe.py
 
