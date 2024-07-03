@@ -40,11 +40,11 @@ This project is a Python-based tool designed to automate the aggregation and pro
 ## Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/excel-aggregation-tool.git
+    git clone https://github.com/pbonotis15/aggregate-and-process-multiple-excel-files.git
     ```
 2. Navigate to the project directory:
     ```sh
-    cd excel-aggregation-tool
+    cd to_your_folder
     ```
 3. Install the required packages:
     ```sh
